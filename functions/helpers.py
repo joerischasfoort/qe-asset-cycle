@@ -6,27 +6,16 @@ import scipy.stats as stats
 import random
 
 
-def calculate_covariance_matrix(historical_stock_returns, params):
+def calculate_covariance_matrix(historical_stock_returns):
     """
     Calculate the covariance matrix of a safe asset (money) provided stock returns
     :param historical_stock_returns: list of historical stock returns
     :return: DataFrame of the covariance matrix of stocks and money (in practice just the variance).
     """
-    #assets = ['asset_' + str(a) for a in range(len(historical_stock_returns))]
-    names = [params["asset_types"][a] + str(a) for a in range(len(params["fundamental_values"]))]
-    names.append('money')
-    h_stock_rets = historical_stock_returns.copy()
+    assets = ['risky_asset', 'money']
+    covariances = np.cov(np.array([historical_stock_returns, np.zeros(len(historical_stock_returns))]))
 
-    if len(historical_stock_returns) > 2:
-        print('buggg')
-
-    h_stock_rets.append(np.array([0.0 for x in range(len(h_stock_rets[0]))]))
-    covariances = np.cov(np.array(h_stock_rets))
-
-    #if covariances.sum().sum() == 0.:
-        # If the price is stationary, revert to base historical variance
-        #covariances[0][0] = base_historical_variance
-    return pd.DataFrame(covariances, index=names, columns=names)
+    return pd.DataFrame(covariances, index=assets, columns=assets)
 
 
 def div0(numerator, denominator):

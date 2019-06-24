@@ -22,19 +22,19 @@ class Trader:
         """
         return 'Trader' + str(self.name)
 
-    def sell(self, amount, price, asset_index, t=0):
+    def sell(self, amount, price, t=0):
         """
         Sells `amount` of stocks for a total of `price`
         :param amount: int Number of stocks sold.
         :param price: float Total price for stocks.
         :return: -
         """
-        if self.var.assets[asset_index][-1] < amount:
+        if self.var.assets[-1] < amount:
             raise ValueError("not enough stocks to sell this amount")
-        self.var.assets[asset_index][-1] -= amount
+        self.var.assets[-1] -= amount
         self.var.money[-1] += price
 
-    def buy(self, amount, price, asset_index, t=0):
+    def buy(self, amount, price, t=0):
         """
         Buys `amount` of stocks for a total of `price`
         :param amount: int number of stocks bought.
@@ -44,7 +44,7 @@ class Trader:
         if self.var.money[-1] < price:
             raise ValueError("not enough money to buy this amount of stocks")
 
-        self.var.assets[asset_index][-1] += amount
+        self.var.assets[-1] += amount
         self.var.money[-1] -= price
 
 
@@ -53,7 +53,7 @@ class TraderVariables:
     Holds the initial variables for the traders
     """
     def __init__(self, weight_fundamentalist, weight_chartist, weight_random, c_share_strat,
-                 money, assets, covariance_matrix, init_prices, active_orders):
+                 money, assets, covariance_matrix, init_price, active_orders):
         """
         Initializes variables for the trader
         :param weight_fundamentalist: float fundamentalist expectation component
@@ -66,8 +66,8 @@ class TraderVariables:
         self.weight_random = [weight_random]
         self.c_share_strat = c_share_strat
         self.money = [money]
-        self.assets = assets
-        self.wealth = [money + sum(np.array([a[-1] for a in assets]) * np.array(init_prices))]
+        self.assets = [assets]
+        self.wealth = [money + assets * init_price]
         self.covariance_matrix = covariance_matrix
         self.active_orders = active_orders
 

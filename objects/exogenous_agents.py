@@ -11,19 +11,19 @@ class CentralBank:
     def __repr__(self):
         return 'central_bank_' + str(self.par.country)
 
-    def sell(self, amount, price, asset_index, t):
+    def sell(self, amount, price, t):
         """
         Sells `amount` of stocks for a total of `price`
         :param amount: int Number of stocks sold.
         :param price: float Total price for stocks.
         :return: -
         """
-        if self.var.assets[asset_index][-1] < amount:
+        if self.var.assets[t] < amount:
             raise ValueError("not enough stocks to sell this amount")
-        self.var.assets[asset_index][t] -= amount
+        self.var.assets[t] -= amount
         self.var.currency[t] += price
 
-    def buy(self, amount, price, asset_index, t):
+    def buy(self, amount, price, t):
         """
         Buys `amount` of stocks for a total of `price`
         :param amount: int number of stocks bought.
@@ -32,7 +32,7 @@ class CentralBank:
         """
         # the central bank is not restricted by the stock of money to buy assets, it creates money.
 
-        self.var.assets[asset_index][t] += amount
+        self.var.assets[t] += amount
         self.var.currency[t] -= price
 
 

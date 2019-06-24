@@ -14,7 +14,7 @@ class LimitOrderBook:
     1. A bids book which contains orders of type 'bid'
     2. An asks book which contains orders of type 'ask'
     """
-    def __init__(self, name, last_price, spread_max, max_return_interval, order_expiration):
+    def __init__(self, last_price, spread_max, max_return_interval, order_expiration):
         """
         Initialize order-book class
         :param last_price: float initial price
@@ -22,7 +22,6 @@ class LimitOrderBook:
         :param max_return_interval: integer length of initial returns series
         :param order_expiration: integer amount of periods after which orders are deleted from the book
         """
-        self.name = name
         self.bids = []
         self.asks = []
         self.order_expiration = order_expiration
@@ -137,7 +136,7 @@ class LimitOrderBook:
             if winning_bid.volume == winning_ask.volume:
                 # notify owner it no longer has an order in the market
                 for order in [winning_bid, winning_ask]:
-                    order.owner.var.active_orders[self.name] = []
+                    order.owner.var.active_orders = []
                 # remove these elements from list
                 del self.bids[-1]
                 del self.asks[0]
@@ -150,12 +149,12 @@ class LimitOrderBook:
                 self.bids[-1].volume -= volume
                 # delete the empty bid or ask
                 if min_index == 0:
-                    self.bids[-1].owner.var.active_orders[self.name] = []
+                    self.bids[-1].owner.var.active_orders = []
                     del self.bids[-1]
                     # update current highest bid
                     self.update_bid_ask_spread('bid')
                 else:
-                    self.asks[0].owner.var.active_orders[self.name] = []
+                    self.asks[0].owner.var.active_orders = []
                     del self.asks[0]
                     # update current lowest ask
                     self.update_bid_ask_spread('ask')
@@ -186,7 +185,7 @@ class LimitOrderBook:
         """
         :return: String representation of the order book object
         """
-        return "order_book" + str(self.name)
+        return "order_book"
 
 
 class Order:

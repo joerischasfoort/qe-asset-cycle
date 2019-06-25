@@ -4,12 +4,13 @@ from functions.portfolio_optimization import *
 from functions.helpers import calculate_covariance_matrix, div0, ornstein_uhlenbeck_evolve, npv
 
 
-def qe_model(traders, central_bank, orderbook, parameters, seed=1):
+def qe_model(traders, central_bank, orderbook, parameters, scenario=None, seed=1):
     """
     The main model function of distribution model where trader stocks are tracked.
     :param traders: list of Agent objects
     :param orderbook: object Order book
     :param parameters: dictionary of parameters
+    :param scenario: can be the following strings: BUSTQE, BUSTQT, BOOMQE, BOOMQT
     :param seed: integer seed to initialise the random number generators
     :return: list of simulated Agent objects, object simulated Order book
     """
@@ -69,13 +70,36 @@ def qe_model(traders, central_bank, orderbook, parameters, seed=1):
             pf = mid_price / fundamentals[-1]
             # if pf is too high, decrease asset target otherwise increase asset target
             quantity_available = int(central_bank.var.assets[qe_tick] * parameters['cb_size']) # TODO debug
-            if pf > 1 + parameters['cb_pf_range']:
-                # sell assets
-                central_bank.var.asset_target[qe_tick] -= quantity_available
-                central_bank.var.asset_target[qe_tick] = max(central_bank.var.asset_target[qe_tick], 0)
-            elif pf < 1 - parameters['cb_pf_range']:
-                # buy assets
-                central_bank.var.asset_target[qe_tick] += quantity_available
+
+            if scenario == 'BUSTQE':
+                if pf < 1 - parameters['cb_pf_range']:
+                    # buy assets
+                    central_bank.var.asset_target[qe_tick] += quantity_available
+            elif scenario == 'BUSTQT':
+                if pf < 1 - parameters['cb_pf_range']:
+                    # sell assets
+                    central_bank.var.asset_target[qe_tick] -= quantity_available
+                    central_bank.var.asset_target[qe_tick] = max(central_bank.var.asset_target[qe_tick], 0)
+
+            elif scenario == 'BOOMQE':
+                if pf > 1 + parameters['cb_pf_range']:
+                    # buy assets
+                    central_bank.var.asset_target[qe_tick] += quantity_available
+
+            elif scenario == 'BOOMQT':
+                if pf > 1 + parameters['cb_pf_range']:
+                    # sell assets
+                    central_bank.var.asset_target[qe_tick] -= quantity_available
+                    central_bank.var.asset_target[qe_tick] = max(central_bank.var.asset_target[qe_tick], 0)
+
+            elif scenario == 'BLR':
+                if pf > 1 + parameters['cb_pf_range']:
+                    # sell assets
+                    central_bank.var.asset_target[qe_tick] -= quantity_available
+                    central_bank.var.asset_target[qe_tick] = max(central_bank.var.asset_target[qe_tick], 0)
+                elif pf < 1 - parameters['cb_pf_range']:
+                    # buy assets
+                    central_bank.var.asset_target[qe_tick] += quantity_available
 
             # determine demand
             cb_demand = int(central_bank.var.asset_target[qe_tick] - central_bank.var.assets[qe_tick]) # TODO debug
@@ -92,7 +116,7 @@ def qe_model(traders, central_bank, orderbook, parameters, seed=1):
             # select random sample of active traders
             active_traders = random.sample(traders, int((parameters['trader_sample_size'])))
 
-            orderbook.returns[-1] = (mid_price - orderbook.tick_close_price[-2]) / orderbook.tick_close_price[-2]
+            orderbook.returns[-1] = (mid_price - orderbook.tick_close_price[-2]) / orderbook.tick_close_price[-2] #todo is this correct
 
             fundamental_component = np.log(fundamentals[-1] / mid_price)
             chartist_component = np.cumsum(orderbook.returns[:-len(orderbook.returns) - 1:-1]
@@ -129,19 +153,19 @@ def qe_model(traders, central_bank, orderbook, parameters, seed=1):
                 noise_component = parameters['std_noise'] * np.random.randn()
 
                 # Expectation formation
-                fcast_prices = []
                 #TODO fix below exp returns per stock asset
                 trader.exp.returns['risky_asset'] = (
                     trader.var.weight_fundamentalist[-1] * np.divide(1, float(trader.par.horizon) * parameters["fundamentalist_horizon_multiplier"]) * fundamental_component +
                     trader.var.weight_chartist[-1] * chartist_component[trader.par.horizon - 1] +
                     trader.var.weight_random[-1] * noise_component)
-                fcast_prices.append(mid_price * np.exp(trader.exp.returns['risky_asset']))
+
+                fcast_price = mid_price * np.exp(trader.exp.returns['risky_asset'])
 
                 obs_rets = orderbook.returns[-trader.par.horizon:]
                 if sum(np.abs(obs_rets)) > 0:
                     observed_returns = obs_rets
                 else:
-                    observed_returns = np.diff(orderbook.fundamental)[-trader.par.horizon:]
+                    observed_returns = np.diff(fundamentals)[-trader.par.horizon:]
 
                 trader.var.covariance_matrix = calculate_covariance_matrix(observed_returns) #TODo debug, does this work as intended?
 
@@ -149,7 +173,7 @@ def qe_model(traders, central_bank, orderbook, parameters, seed=1):
                 ideal_trader_weights = portfolio_optimization(trader, tick) #TODO debug, does this still work as intended
 
                 # Determine price and volume
-                trader_price = np.random.normal(fcast_prices, trader.par.spread)
+                trader_price = np.random.normal(fcast_price, trader.par.spread)
                 position_change = (ideal_trader_weights['risky_asset'] * (
                         trader.var.assets[-1] * trader_price + trader.var.money[-1])) - (
                                               trader.var.assets[-1] * trader_price)

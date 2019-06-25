@@ -7,7 +7,7 @@ start_time = time.time()
 # # 1 setup parameters
 parameters = {"fundamental_value": 105,
               "trader_sample_size": 22, "n_traders": 500,
-              "ticks": 1552, "std_fundamental": 0.02,
+              "ticks": 1552, "std_fundamental": 0.22,
               "std_noise": 0.159, "w_random": 0.056,
               "strat_share_chartists": 0.41,
               "init_assets": 740, "base_risk_aversion": 4.051,

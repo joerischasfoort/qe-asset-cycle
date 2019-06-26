@@ -19,7 +19,6 @@ def qe_model(traders, central_bank, orderbook, parameters, scenario=None, seed=1
 
     fundamentals = [parameters["fundamental_value"]]
 
-    orderbook.qe_periods = []
     orderbook.tick_close_price.append(fundamentals[-1])
 
     traders_by_wealth = [t for t in traders]
@@ -109,11 +108,11 @@ def qe_model(traders, central_bank, orderbook, parameters, scenario=None, seed=1
             if cb_demand > 0:
                 bid = orderbook.add_bid(orderbook.lowest_ask_price, cb_demand, central_bank)
                 central_bank.var.active_orders.append(bid)
-                orderbook.qe_periods.append(qe_tick)
+                orderbook.qe_period[qe_tick] = True
             elif cb_demand < 0:
                 ask = orderbook.add_ask(orderbook.highest_bid_price, -cb_demand, central_bank)
                 central_bank.var.active_orders.append(ask)
-                orderbook.qe_periods.append(qe_tick)
+                orderbook.qt_period[qe_tick] = True
 
             # END QE ##############################################################################################
             # select random sample of active traders

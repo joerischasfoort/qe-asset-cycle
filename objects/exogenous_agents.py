@@ -9,7 +9,7 @@ class CentralBank:
         self.par = parameters
 
     def __repr__(self):
-        return 'central_bank_' + str(self.par.country)
+        return 'central_bank'
 
     def sell(self, amount, price, t):
         """

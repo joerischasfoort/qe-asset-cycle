@@ -108,10 +108,12 @@ def qe_model(traders, central_bank, orderbook, parameters, scenario=None, seed=1
             if cb_demand > 0:
                 bid = orderbook.add_bid(orderbook.lowest_ask_price, cb_demand, central_bank)
                 central_bank.var.active_orders.append(bid)
+                print('cb QE')
                 orderbook.qe_period[qe_tick] = True
             elif cb_demand < 0:
                 ask = orderbook.add_ask(orderbook.highest_bid_price, -cb_demand, central_bank)
                 central_bank.var.active_orders.append(ask)
+                print('cb QT')
                 orderbook.qt_period[qe_tick] = True
 
             # END QE ##############################################################################################

@@ -70,6 +70,22 @@ def init_objects(parameters, seed):
 
     # initialize central bank with assets at target
     asset_target_cb = int(parameters["qe_perc_size"] * total_stocks)
+    asset_target = [asset_target_cb for t in range(parameters['ticks'])]
+
+    ## TODO new
+    # Determine QE volume
+    if parameters["qe_end"] - parameters["qe_start"] > 0:
+        QE_periods = parameters["qe_end"] - parameters["qe_start"]
+        total_QE_volume = parameters["qe_perc_size"] * total_stocks
+        period_volume = int(total_QE_volume / QE_periods)
+
+        #asset_target = [0 for t in range(parameters['ticks'])]
+        for t in range(parameters['ticks']):
+            if t in range(parameters["qe_start"], parameters["qe_end"]):
+                asset_target[t] = asset_target[t - 1] + period_volume
+            elif t >= parameters["qe_end"]:
+                asset_target[t] = asset_target[t - 1]
+        ##
 
     cb_assets = [asset_target_cb for t in range(parameters['ticks'])]
 
@@ -77,7 +93,7 @@ def init_objects(parameters, seed):
     currency -= np.array(cb_assets) * parameters["fundamental_value"]
 
     asset_demand = 0
-    asset_target = [asset_target_cb for t in range(parameters['ticks'])]
+
     init_active_orders_cb = []
 
     cb_pars = CBParameters(0.0)

@@ -30,8 +30,8 @@ def qe_model(traders, central_bank, orderbook, parameters, scenario=None, seed=1
             print('Start of simulation ', seed)
 
         print(tick)
-        if tick == 419:
-            print('debug')
+        # if tick == 419:
+        #     print('debug')
 
         # update money and stocks history for agents
         for trader in traders:
@@ -44,7 +44,8 @@ def qe_model(traders, central_bank, orderbook, parameters, scenario=None, seed=1
 
         # update money and assets for central bank
         central_bank.var.assets[qe_tick] = central_bank.var.assets[qe_tick - 1]
-        central_bank.var.asset_target[qe_tick] = central_bank.var.asset_target[qe_tick - 1]
+        if scenario in ['BUSTQE', 'BUSTQT', 'BOOMQE', 'BOOMQT', 'BLR']:
+            central_bank.var.asset_target[qe_tick] = central_bank.var.asset_target[qe_tick - 1]
         central_bank.var.currency[qe_tick] = central_bank.var.currency[qe_tick - 1]
 
         # sort the traders by wealth to

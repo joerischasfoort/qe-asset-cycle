@@ -16,7 +16,8 @@ parameters = {"fundamental_value": 105,
               "trades_per_tick": 3, "mutation_intensity": 0.0477,
               "average_learning_ability": 0.02, 'money_multiplier': 2.6,
               "bond_mean_reversion": 0.0, 'cb_pf_range': 0.05,
-              "qe_perc_size": 0.16, "cb_size": 0.02, "qe_asset_index": 0}
+              "qe_perc_size": 0.16, "cb_size": 0.02, "qe_asset_index": 0,
+              "qe_start": 2, "qe_end": 499}
 
 
 seed = 0
@@ -24,7 +25,7 @@ seed = 0
 traders, central_bank, orderbook = init_objects(parameters, seed)
 
 # 3 simulate model
-traders, central_bank, orderbook = qe_model(traders, central_bank, orderbook, parameters, scenario='BLR', seed=seed)
+traders, central_bank, orderbook = qe_model(traders, central_bank, orderbook, parameters, scenario='None', seed=seed)
 
 print("The simulations took", time.time() - start_time, "to run")
 

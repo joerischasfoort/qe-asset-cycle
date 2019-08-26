@@ -1,7 +1,8 @@
-from qe_inequality_model import qe_ineq_model
-from init_objects import init_objects_qe_ineq
+from qe_model import qe_model
+from init_objects import init_objects
 from functions.helpers import organise_data
 from functions.evolutionaryalgo import *
+from hurst import compute_Hc, random_walk
 
 
 def distr_model_performance(input_parameters):
@@ -12,35 +13,41 @@ def distr_model_performance(input_parameters):
     """
     # set fixed parameters of integer variables & variable names
     n_runs = 1
-    integer_var_locations = [0, 5, 7]
-    variable_names = ['trader_sample_size', 'std_noise', 'w_fundamentalists', 'w_momentum',
-                      'base_risk_aversion', 'horizon', "fundamentalist_horizon_multiplier",
-                      "trades_per_tick", "mutation_probability", "average_learning_ability"]
-
-    # convert relevant parameters to integers
-    new_input_params = []
-    for idx, par in enumerate(input_parameters):
-        if idx in integer_var_locations:
-            new_input_params.append(int(par))
-        else:
-            new_input_params.append(par.item())
+    variable_names = ['std_noise', "w_random", "strat_share_chartists",
+            "base_risk_aversion", "fundamentalist_horizon_multiplier",
+            "mutation_intensity", "average_learning_ability"]
 
     # update params
-    uncertain_parameters = dict(zip(variable_names, new_input_params))
-    params = {"ticks": 500, "fundamental_value": 166, 'n_traders': 500, 'std_fundamental': 0.0530163128919286,
-              'spread_max': 0.004087, "w_random": 1.0, "init_stocks": 50} #TODO make ticks: 2516 * 10
+    uncertain_parameters = dict(zip(variable_names, input_parameters))
+    params = {"fundamental_value": 166,
+             "trader_sample_size": 22,
+             "n_traders": 1000,
+             "ticks": 600,
+             "std_fundamental": 0.053,
+             "init_assets": 740,
+             'spread_max': 0.004,
+             'money_multiplier': 2.2,
+             "horizon": 200,
+             "std_noise": 0.049,
+             "w_random": 0.08,
+             "strat_share_chartists": 0.08,
+             "base_risk_aversion": 1.051,
+             "fundamentalist_horizon_multiplier": 3.8,
+             "trades_per_tick": 1, "mutation_intensity": 0.0477,
+             "average_learning_ability": 0.05,
+             "bond_mean_reversion": 0.0, 'cb_pf_range': 0.05,
+             "qe_perc_size": 0.16, "cb_size": 0.02, "qe_asset_index": 0, "qe_start": 2, "qe_end":598}
     params.update(uncertain_parameters)
 
-    empirical_moments = np.array([-7.91632942e-03, -6.44109792e-02, -5.17149408e-02, 2.15757804e-01,
-                                  4.99915089e+00, 2.29239806e-01, 1.36705815e-01, 8.99171488e-02, 3.97109985e-02,
-                                  4.56905198e-02, 3.40685479e-03])
+    empirical_moments = np.array([0.05034916, 0.06925489, 4.16055312, 0.71581425])
 
     traders = []
     obs = []
     # run model with parameters
     for seed in range(n_runs):
-        traders, orderbook = init_objects_qe_ineq(params, seed)
-        traders, orderbook = qe_ineq_model(traders, orderbook, params, seed)
+        traders, central_bank, orderbook = init_objects(params, seed)
+        traders, central_bank, orderbook = qe_model(traders, central_bank, orderbook, params, scenario='None',
+                                                    seed=seed)
         traders.append(traders)
         obs.append(orderbook)
 
@@ -48,42 +55,23 @@ def distr_model_performance(input_parameters):
     mc_prices, mc_returns, mc_autocorr_returns, mc_autocorr_abs_returns, mc_volatility, mc_volume, mc_fundamentals = organise_data(
         obs)
 
-    first_order_autocors = []
-    autocors1 = []
-    autocors5 = []
-    mean_abs_autocor = []
-    kurtoses = []
-    spy_abs_auto10 = []
-    spy_abs_auto25 = []
-    spy_abs_auto50 = []
-    spy_abs_auto100 = []
-    spy_abs_auto150 = []
-    spy_abs_auto200 = []
+    autocor = []
+    autocor_abs = []
+    kurtosis = []
+    hursts = []
+
     for col in mc_returns:
-        first_order_autocors.append(autocorrelation_returns(mc_returns[col][1:], 25))
-        autocors1.append(mc_returns[col][1:].autocorr(lag=1))
-        autocors5.append(mc_returns[col][1:].autocorr(lag=5))
-        mean_abs_autocor.append(autocorrelation_abs_returns(mc_returns[col][1:], 25))
-        kurtoses.append(mc_returns[col][2:].kurtosis())
-        spy_abs_auto10.append(mc_returns[col][1:].abs().autocorr(lag=10))
-        spy_abs_auto25.append(mc_returns[col][1:].abs().autocorr(lag=25))
-        spy_abs_auto50.append(mc_returns[col][1:].abs().autocorr(lag=50))
-        spy_abs_auto100.append(mc_returns[col][1:].abs().autocorr(lag=100))
-        spy_abs_auto150.append(mc_returns[col][1:].abs().autocorr(lag=150))
-        spy_abs_auto200.append(mc_returns[col][1:].abs().autocorr(lag=200))
+        autocor.append(autocorrelation_returns(mc_returns[col][1:], 25).mean())
+        autocor_abs.append(autocorrelation_returns(mc_returns[col][1:], 25).abs().mean())
+        kurtosis.append(mc_returns[col][1:].kurtosis())
+        H, c, data = compute_Hc(mc_prices[col].dropna(), kind='price', simplified=True)
+        hursts.append(H)
 
     stylized_facts_sim = np.array([
-        np.mean(first_order_autocors),
-        np.mean(autocors1),
-        np.mean(autocors5),
-        np.mean(mean_abs_autocor),
-        np.mean(kurtoses),
-        np.mean(spy_abs_auto10),
-        np.mean(spy_abs_auto25),
-        np.mean(spy_abs_auto50),
-        np.mean(spy_abs_auto100),
-        np.mean(spy_abs_auto150),
-        np.mean(spy_abs_auto200)
+        np.mean(autocor),
+        np.mean(autocor_abs),
+        np.mean(kurtosis),
+        np.mean(hursts)
     ])
 
     W = np.load('distr_weighting_matrix.npy') #if this doesn't work, use: np.identity(len(stylized_facts_sim))

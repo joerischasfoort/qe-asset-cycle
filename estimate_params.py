@@ -149,7 +149,7 @@ def pool_handler():
     #TODO comment this out
     #model_performance(init_parameters)
 
-    output = constrNM(model_performance, init_parameters, LB, UB, maxiter=15, full_output=True)
+    output = constrNM(model_performance, init_parameters, LB, UB, maxiter=10, full_output=True)
 
     with open('estimated_params.json', 'w') as f:
         json.dump(list(output['xopt']), f)

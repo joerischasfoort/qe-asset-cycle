@@ -6,6 +6,7 @@ from multiprocessing import Pool
 import json
 import numpy as np
 import math
+from hurst import compute_Hc
 
 np.seterr(all='ignore')
 
